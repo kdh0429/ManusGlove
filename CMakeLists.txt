@@ -133,7 +133,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
  add_executable(manus_pub src/manus_pub.cpp)
-
+ add_executable(manus_sub src/manus_sub.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -148,7 +148,9 @@ include_directories(
  target_link_libraries(manus_pub
    ${catkin_LIBRARIES}
  )
-
+ target_link_libraries(manus_sub
+   ${catkin_LIBRARIES}
+)
 #############
 ## Install ##
 #############

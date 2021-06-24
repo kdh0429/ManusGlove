@@ -1,0 +1,21 @@
+<launch>
+     <arg name="node_start_delay" default="1.0" />  
+     <node name="manus_pub"
+        pkg="manus_pipe"
+        type="manus_pub">
+        </node>
+
+     <node name="manus_sub"
+        pkg="manus_pipe"
+        type="manus_sub">
+        </node>
+  
+     <node name="chatter"
+        pkg="chatter"
+        type="chatter">
+        
+        </node>
+         
+
+</launch>
+

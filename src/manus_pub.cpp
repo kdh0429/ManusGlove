@@ -51,6 +51,9 @@ void right_joint_angle_pub(char buffer[127])
         right_joints.position[jointNum*4+1] = joint_value[1];
         right_joints.position[jointNum*4+2] = joint_value[2];
         right_joints.position[jointNum*4+3] = joint_value[3];
+        
+        right_joints.header.stamp = ros::Time::now();
+        right_joint_pub.publish(right_joints);
     }
 
     //timestamp
@@ -64,26 +67,35 @@ void right_joint_angle_pub(char buffer[127])
         right_joint_pub.publish(right_joints);
     }
 
-    allegro_hand_joint_cmd.position[0] = right_joints.position[4];
-    allegro_hand_joint_cmd.position[1] = 0.097 + right_joints.position[5] * 1.5;
-    allegro_hand_joint_cmd.position[2] = right_joints.position[6] * 1.5;
-    allegro_hand_joint_cmd.position[3] = right_joints.position[7] * 1.5;
+    float mcpmod1 = 0.389*right_joints.position[4]*right_joints.position[4]-0.272*right_joints.position[4]+0.675;
+    float mcpmod2 = 0.389*right_joints.position[8]*right_joints.position[8]-0.272*right_joints.position[8]+0.675;
+    float mcpmod3 = 0.389*right_joints.position[12]*right_joints.position[12]-0.272*right_joints.position[12]+0.675;
+    // allegro_hand_joint_cmd.position[0] = right_joints.position[4];
+    allegro_hand_joint_cmd.position[0] = 0.5 * right_joints.position[4];
+    allegro_hand_joint_cmd.position[1] = right_joints.position[5];
+    allegro_hand_joint_cmd.position[2] = 1.5*right_joints.position[6];
+    allegro_hand_joint_cmd.position[3] = 1.5*right_joints.position[7]*mcpmod1;
 
-    allegro_hand_joint_cmd.position[4] = right_joints.position[8];
-    allegro_hand_joint_cmd.position[5] = 0.396 + right_joints.position[9] *1.5;
-    allegro_hand_joint_cmd.position[6] = right_joints.position[10] * 1.5;
-    allegro_hand_joint_cmd.position[7] = right_joints.position[11] * 1.5;
+    // allegro_hand_joint_cmd.position[4] = right_joints.position[8];
+    allegro_hand_joint_cmd.position[4] = 0.5 * right_joints.position[8];
+    allegro_hand_joint_cmd.position[5] = right_joints.position[9];
+    allegro_hand_joint_cmd.position[6] = 1.8*right_joints.position[10];
+    allegro_hand_joint_cmd.position[7] = 1.8*right_joints.position[11]*mcpmod2;
     
-    allegro_hand_joint_cmd.position[8] = right_joints.position[12];
-    allegro_hand_joint_cmd.position[9] = right_joints.position[13] * 1.5;
-    allegro_hand_joint_cmd.position[10] = right_joints.position[14] * 1.5;
-    allegro_hand_joint_cmd.position[11] = right_joints.position[15] * 1.5;
+    // allegro_hand_joint_cmd.position[8] = right_joints.position[12];
+    allegro_hand_joint_cmd.position[8] = 0.5 * right_joints.position[12];
+    allegro_hand_joint_cmd.position[9] = right_joints.position[13];
+    allegro_hand_joint_cmd.position[10] = 1.5*right_joints.position[14];
+    allegro_hand_joint_cmd.position[11] = 1.5*right_joints.position[15]*mcpmod3;
 
-    allegro_hand_joint_cmd.position[12] = right_joints.position[0]; 
-    allegro_hand_joint_cmd.position[13] = right_joints.position[1]; 
-    allegro_hand_joint_cmd.position[14] = right_joints.position[2] * 1.5;
-    allegro_hand_joint_cmd.position[15] = right_joints.position[3] * 1.5;
-
+    if(false) {}
+    else {
+        allegro_hand_joint_cmd.position[12] = right_joints.position[2] * 1.6 + right_joints.position[9] * 0.3; 
+        allegro_hand_joint_cmd.position[13] = 0; //right_joints.position[1] * 0.1; 
+        allegro_hand_joint_cmd.position[14] = 1.5 - right_joints.position[0] * 1.3;
+        allegro_hand_joint_cmd.position[15] = right_joints.position[3] * 0.7;
+    }
+    
     allegro_pub.publish(allegro_hand_joint_cmd);
 }
 
@@ -165,8 +177,8 @@ int main(int argc, char **argv)
     cout << "Connecting to pipe..." << endl;
     // Open the named pipe
     // Most of these parameters aren't very relevant for pipes.
-    HANDLE pipe = CreateFile(
-        "\\\\.\\pipe\\my_pipe",
+    HANDLE pub_pipe = CreateFile(
+        "\\\\.\\pipe\\pub_pipe",
         GENERIC_READ, // only need read access
         FILE_SHARE_READ | FILE_SHARE_WRITE,
         NULL,
@@ -174,7 +186,7 @@ int main(int argc, char **argv)
         FILE_ATTRIBUTE_NORMAL,
         NULL
     );
-    if (pipe == INVALID_HANDLE_VALUE) {
+    if (pub_pipe == INVALID_HANDLE_VALUE) {
         cout << "Failed to connect to pipe." << endl;
         // look up error code here using GetLastError()
         system("pause");
@@ -193,7 +205,7 @@ int main(int argc, char **argv)
     ros::Rate rate(240);
     while(ros::ok){
         result = ReadFile(
-            pipe,
+            pub_pipe,
             buffer, // the data from the pipe will be put here
             127 * sizeof(char), // number of bytes allocated
             &numBytesRead, // this will store number of bytes actually read
@@ -217,7 +229,7 @@ int main(int argc, char **argv)
         rate.sleep();
     }
     // Close our pipe handle
-    CloseHandle(pipe);
+    CloseHandle(pub_pipe);
     cout << "Done." << endl;
     system("pause");
     return 0;
